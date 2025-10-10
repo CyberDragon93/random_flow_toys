@@ -91,3 +91,32 @@ class MLPVelocity(nn.Module):
             x = block(x, t_emb)
         x = self.output_layer(x)
         return x
+
+
+class VarMLP(nn.Module):
+    def __init__(
+        self,
+        time_emb_dim: int = 128,
+        hidden_dims: tuple = (128, 256, 128),
+    ):
+        super().__init__()
+        self.pos_emb = PositionalEmbedding(num_channels=time_emb_dim)
+
+        layers = []
+        in_dim = time_emb_dim
+        for h in hidden_dims:
+            layers.append(nn.Linear(in_dim, h))
+            layers.append(nn.SiLU())
+            in_dim = h
+        self.mlp = nn.Sequential(*layers)
+
+        self.out_proj = nn.Linear(in_dim, 1)
+
+        self.skip_proj = nn.Linear(time_emb_dim, 1)
+
+    def forward(self, t: torch.Tensor) -> torch.Tensor:
+        t_emb = self.pos_emb(t)
+        h = self.mlp(t_emb)
+        logvar = self.out_proj(h).squeeze(-1)      # (batch,)
+        logvar = logvar + self.skip_proj(t_emb).squeeze(-1)
+        return logvar
