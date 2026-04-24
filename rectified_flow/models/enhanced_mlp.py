@@ -97,7 +97,7 @@ class VarMLP(nn.Module):
     def __init__(
         self,
         time_emb_dim: int = 128,
-        hidden_dims: tuple = (128, 256, 128),
+        hidden_dims: tuple = (256,),
     ):
         super().__init__()
         self.pos_emb = PositionalEmbedding(num_channels=time_emb_dim)
